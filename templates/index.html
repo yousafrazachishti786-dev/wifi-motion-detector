@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi Motion Detector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px 20px;
+        }
+
+        .status-box {
+            background: #f5f7fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .status-indicator {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            transition: all 0.3s ease;
+        }
+
+        .status-indicator.idle {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .status-indicator.motion {
+            background: #ffebee;
+            color: #f44336;
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .status-text {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .status-sub {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: #f5f7fa;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .stat-unit {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e8e8e8;
+            color: #333;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #d0d0d0;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .settings-section {
+            background: #f5f7fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .settings-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .setting-group {
+            margin-bottom: 15px;
+        }
+
+        .setting-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .setting-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .setting-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .setting-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .history-section {
+            background: #f5f7fa;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .history-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-time {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .error {
+            background: #ffebee;
+            border: 1px solid #ef5350;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        .success {
+            background: #e8f5e9;
+            border: 1px solid #66bb6a;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: currentColor;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: loading 1.4s infinite;
+        }
+
+        .loading:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes loading {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+
+        .footer {
+            background: #f5f7fa;
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                border-radius: 0;
+            }
+
+            .header {
+                padding: 20px 15px;
+            }
+
+            .content {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📡 Motion Detector</h1>
+            <p>WiFi-Based Motion Detection System</p>
+        </div>
+
+        <div class="content">
+            <div id="message"></div>
+
+            <!-- Status Section -->
+            <div class="status-box">
+                <div class="status-indicator idle" id="statusIndicator">✓</div>
+                <div class="status-text" id="statusText">Not Running</div>
+                <div class="status-sub" id="statusSub">Start detector to begin monitoring</div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid" id="statsGrid" style="display: none;">
+                <div class="stat-card">
+                    <div class="stat-label">Signal Strength</div>
+                    <div class="stat-value" id="rssiValue">—</div>
+                    <div class="stat-unit">dBm</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Variance</div>
+                    <div class="stat-value" id="varianceValue">—</div>
+                    <div class="stat-unit">signal change</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Motion Events</div>
+                    <div class="stat-value" id="eventsValue">0</div>
+                    <div class="stat-unit">detected</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Uptime</div>
+                    <div class="stat-value" id="uptimeValue">0s</div>
+                    <div class="stat-unit">elapsed</div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <button class="btn btn-primary" id="startBtn" onclick="startDetector()">Start</button>
+                <button class="btn btn-secondary" id="stopBtn" onclick="stopDetector()" disabled>Stop</button>
+            </div>
+
+            <!-- Settings Section -->
+            <div class="settings-section">
+                <div class="settings-title">⚙️ Settings</div>
+                <div class="setting-group">
+                    <label class="setting-label">WiFi Interface</label>
+                    <input type="text" class="setting-input" id="interface" value="wlan0" placeholder="e.g., wlan0">
+                </div>
+                <div class="setting-group">
+                    <label class="setting-label">Sensitivity Threshold</label>
+                    <input type="number" class="setting-input" id="threshold" value="3" min="0.1" step="0.1">
+                </div>
+                <div class="setting-group">
+                    <label class="setting-label">Window Size (readings)</label>
+                    <input type="number" class="setting-input" id="windowSize" value="10" min="5" max="50">
+                </div>
+            </div>
+
+            <!-- History Section -->
+            <div class="history-section">
+                <div class="history-title">📋 Recent Events</div>
+                <div class="history-list" id="historyList">
+                    <div style="text-align: center; color: #999; padding: 20px;">
+                        No events yet
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Access on any device: <strong>http://&lt;your-ip&gt;:5000</strong>
+        </div>
+    </div>
+
+    <script>
+        let statusUpdateInterval = null;
+        let detectorRunning = false;
+
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                if (data) options.body = JSON.stringify(data);
+
+                const response = await fetch(`/api${endpoint}`, options);
+                if (!response.ok) throw new Error(`API error: ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error(error);
+                showMessage(error.message, 'error');
+                return null;
+            }
+        }
+
+        async function startDetector() {
+            const interface_ = document.getElementById('interface').value;
+            const threshold = parseFloat(document.getElementById('threshold').value);
+            const windowSize = parseInt(document.getElementById('windowSize').value);
+
+            const result = await apiCall('/start', 'POST', {
+                interface: interface_,
+                threshold,
+                window_size: windowSize
+            });
+
+            if (result?.success) {
+                detectorRunning = true;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                document.getElementById('statsGrid').style.display = 'grid';
+                document.getElementById('interface').disabled = true;
+                document.getElementById('threshold').disabled = true;
+                document.getElementById('windowSize').disabled = true;
+                showMessage('Detector started successfully', 'success');
+                startStatusUpdates();
+            }
+        }
+
+        async function stopDetector() {
+            const result = await apiCall('/stop', 'POST');
+            if (result?.success) {
+                detectorRunning = false;
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+                document.getElementById('statsGrid').style.display = 'none';
+                document.getElementById('interface').disabled = false;
+                document.getElementById('threshold').disabled = false;
+                document.getElementById('windowSize').disabled = false;
+                clearInterval(statusUpdateInterval);
+                updateStatusDisplay('Not Running', 'idle', 'Detector stopped');
+                showMessage('Detector stopped', 'success');
+            }
+        }
+
+        function startStatusUpdates() {
+            updateStatus(); // Initial update
+            statusUpdateInterval = setInterval(updateStatus, 2000);
+        }
+
+        async function updateStatus() {
+            if (!detectorRunning) return;
+
+            const status = await apiCall('/status');
+            if (status) {
+                const motion = status.current_status === 'MOTION';
+                updateStatusDisplay(
+                    status.current_status,
+                    motion ? 'motion' : 'idle',
+                    motion ? 'Motion detected!' : 'No motion'
+                );
+
+                document.getElementById('rssiValue').textContent = status.current_rssi || '—';
+                document.getElementById('varianceValue').textContent = (status.signal_variance || 0).toFixed(2);
+                document.getElementById('eventsValue').textContent = status.motion_events;
+                document.getElementById('uptimeValue').textContent = formatUptime(status.uptime_seconds);
+            }
+
+            const history = await apiCall('/history');
+            if (history) {
+                updateHistory(history.history);
+            }
+        }
+
+        function updateStatusDisplay(text, indicator, subtext) {
+            document.getElementById('statusText').textContent = text;
+            document.getElementById('statusSub').textContent = subtext;
+            const elem = document.getElementById('statusIndicator');
+            elem.className = `status-indicator ${indicator}`;
+            elem.textContent = indicator === 'motion' ? '🚨' : '✓';
+        }
+
+        function updateHistory(history) {
+            const list = document.getElementById('historyList');
+            if (history.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No events yet</div>';
+                return;
+            }
+
+            list.innerHTML = history.slice(-10).reverse().map(item => {
+                const time = new Date(item.timestamp);
+                const timeStr = time.toLocaleTimeString();
+                return `
+                    <div class="history-item">
+                        <strong>🚨 Motion detected</strong>
+                        <div class="history-time">${timeStr}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatUptime(seconds) {
+            if (seconds < 60) return Math.floor(seconds) + 's';
+            if (seconds < 3600) return Math.floor(seconds / 60) + 'm';
+            return Math.floor(seconds / 3600) + 'h';
+        }
+
+        function showMessage(message, type = 'info') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        // Check server health on load
+        window.addEventListener('load', async () => {
+            const health = await apiCall('/health');
+            if (!health) {
+                showMessage('Cannot connect to server', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
